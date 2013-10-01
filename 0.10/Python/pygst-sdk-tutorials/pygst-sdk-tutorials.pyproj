@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{e1377634-d364-4147-8561-6a23c3688c73}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>playback-tutorial-4.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <ItemGroup>
+    <Compile Include="basic-tutorial-1.py" />
+    <Compile Include="basic-tutorial-12-new.py" />
+    <Compile Include="basic-tutorial-12.py" />
+    <Compile Include="basic-tutorial-13-ext.py" />
+    <Compile Include="basic-tutorial-13.py" />
+    <Compile Include="basic-tutorial-2.py" />
+    <Compile Include="basic-tutorial-3-exc.py" />
+    <Compile Include="basic-tutorial-3.py" />
+    <Compile Include="basic-tutorial-4.py" />
+    <Compile Include="basic-tutorial-5.py" />
+    <Compile Include="basic-tutorial-6.py" />
+    <Compile Include="basic-tutorial-7.py" />
+    <Compile Include="basic-tutorial-8.py" />
+    <Compile Include="basic-tutorial-9.py" />
+    <Compile Include="playback-tutorial-1.py" />
+    <Compile Include="playback-tutorial-2.py" />
+    <Compile Include="playback-tutorial-3.py" />
+    <Compile Include="playback-tutorial-4.py" />
+    <Compile Include="playback-tutorial-5.py" />
+    <Compile Include="playback-tutorial-6.py" />
+    <Compile Include="playback-tutorial-7-exc.py" />
+    <Compile Include="playback-tutorial-7.py" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+</Project>
