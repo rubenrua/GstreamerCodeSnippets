@@ -34,5 +34,5 @@ gst-launch v4l2src ! ffmpegcolorspace ! radioactv ! ffmpegcolorspace ! autovideo
 gst-launch v4l2src ! ffmpegcolorspace ! streaktv ! ffmpegcolorspace ! autovideosink
 
 # rippletv: RippleTV effect
-gst-launch v4l2src ! ffmpegcolorspace ! reppletv ! ffmpegcolorspace ! autovideosink
+gst-launch v4l2src ! ffmpegcolorspace ! rippletv ! ffmpegcolorspace ! autovideosink
 
