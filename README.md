@@ -52,4 +52,9 @@ Other Sources
 
 
 
- 
+### Blogs
+
+* https://coaxion.net/blog/
+* http://blogs.gnome.org/uraeus/
+* http://schleef.org/blog/
+* http://gstreamer.freedesktop.org/planet/
