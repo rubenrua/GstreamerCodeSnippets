@@ -50,9 +50,9 @@ class GTK_Main(object):
                 self.button.set_label("Stop")
                 self.player.get_by_name("file-source").set_property("location", filepath)
                 self.player.set_state(Gst.State.PLAYING)
-            else:
-                self.player.set_state(Gst.State.NULL)
-                self.button.set_label("Start")
+        else:
+            self.player.set_state(Gst.State.NULL)
+            self.button.set_label("Start")
 
     def on_message(self, bus, message):
         t = message.type
@@ -66,7 +66,7 @@ class GTK_Main(object):
             self.button.set_label("Start")
     
     def demuxer_callback(self, demuxer, pad):
-        adec_pad = self.audio_decoder.get_pad("sink")
+        adec_pad = self.audio_decoder.get_static_pad("sink")
         pad.link(adec_pad)
 
 

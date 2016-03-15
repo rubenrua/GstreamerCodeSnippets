@@ -59,11 +59,11 @@ class GTK_Main(object):
                 self.player.get_by_name("file-source").set_property("location", filepath)
                 self.player.set_state(Gst.State.PLAYING)
                 self.play_thread_id = thread.start_new_thread(self.play_thread, ())
-            else:
-                self.play_thread_id = None
-                self.player.set_state(Gst.State.NULL)
-                self.button.set_label("Start")
-                self.time_label.set_text("00:00 / 00:00")
+        else:
+            self.play_thread_id = None
+            self.player.set_state(Gst.State.NULL)
+            self.button.set_label("Start")
+            self.time_label.set_text("00:00 / 00:00")
                 
     def play_thread(self):
         play_thread_id = self.play_thread_id

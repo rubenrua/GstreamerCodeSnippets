@@ -46,9 +46,9 @@ class GTK_Main(object):
                 self.button.set_label("Stop")
                 self.player.get_by_name("file-source").set_property("location", filepath)
                 self.player.set_state(Gst.State.PLAYING)
-            else:
-                self.player.set_state(Gst.State.NULL)
-                self.button.set_label("Start")
+        else:
+            self.player.set_state(Gst.State.NULL)
+            self.button.set_label("Start")
 
     def on_message(self, bus, message):
         t = message.type
