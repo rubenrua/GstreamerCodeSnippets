@@ -1,37 +1,35 @@
 #!/usr/bin/env python
 
-import sys, os, time
-import pygtk, gtk, gobject
-import pygst
-pygst.require("0.10")
-import gst
+import os
+import gi
+gi.require_version("Gst", "1.0")
+from gi.repository import Gst, GObject, Gtk
 
 class GTK_Main:
     
     def __init__(self):
-        window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
         window.set_title("Resolutionchecker")
         window.set_default_size(300, -1)
-        window.connect("destroy", gtk.main_quit, "WM destroy")
-        vbox = gtk.VBox()
+        window.connect("destroy", Gtk.main_quit, "WM destroy")
+        vbox = Gtk.VBox()
         window.add(vbox)
-        self.entry = gtk.Entry()
-        vbox.pack_start(self.entry, False, True)
-        self.button = gtk.Button("Check")
+        self.entry = Gtk.Entry()
+        vbox.pack_start(self.entry, False, True, 0)
+        self.button = Gtk.Button("Check")
         self.button.connect("clicked", self.start_stop)
         vbox.add(self.button)
         window.show_all()
         
-        self.player = gst.Pipeline("player")
-        source = gst.element_factory_make("filesrc", "file-source")
-        decoder = gst.element_factory_make("decodebin", "decoder")
-        decoder.connect("new-decoded-pad", self.decoder_callback)
-        self.fakea = gst.element_factory_make("fakesink", "fakea")
-        self.fakev = gst.element_factory_make("fakesink", "fakev")
-        
-        self.player.add(source, decoder, self.fakea, self.fakev)
-        gst.element_link_many(source, decoder)
-        
+        self.player = Gst.Pipeline.new("player")
+        source = Gst.ElementFactory.make("filesrc", "file-source")
+        decoder = Gst.ElementFactory.make("decodebin", "decoder")
+        decoder.connect("pad-added", self.decoder_callback)
+        self.fakea = Gst.ElementFactory.make("fakesink", "fakea")
+        self.fakev = Gst.ElementFactory.make("fakesink", "fakev")
+        for ele in [source, decoder, self.fakea, self.fakev]:
+            self.player.add(ele)
+        source.link(decoder)
         bus = self.player.get_bus()
         bus.add_signal_watch()
         bus.connect("message", self.on_message)
@@ -39,34 +37,41 @@ class GTK_Main:
     def start_stop(self, w):
         filepath = self.entry.get_text()
         if os.path.isfile(filepath):
-            self.player.set_state(gst.STATE_NULL)
+            self.player.set_state(Gst.State.NULL)
             self.player.get_by_name("file-source").set_property("location", filepath)
-            self.player.set_state(gst.STATE_PAUSED)
+            self.player.set_state(Gst.State.PAUSED)
         
     def on_message(self, bus, message):
-        t = message.type
-        if t == gst.MESSAGE_STATE_CHANGED:
-            if message.parse_state_changed()[1] == gst.STATE_PAUSED:
-                for i in self.player.get_by_name("decoder").src_pads():
-                    structure_name = i.get_caps()[0].get_name()
-                    if structure_name.startswith("video") and len(str(i.get_caps()[0]["width"])) < 6:
-                        print "Width:%s, Height:%s" %(i.get_caps()[0]["width"], i.get_caps()[0]["height"])
-                        self.player.set_state(gst.STATE_NULL)
+        typ = message.type
+        if typ == Gst.MessageType.STATE_CHANGED:
+            if message.parse_state_changed()[1] == Gst.State.PAUSED:
+                decoder = self.player.get_by_name("decoder")
+                for pad in decoder.srcpads:
+#                   caps = pad.query_caps(None)
+                    caps = pad.get_current_caps()
+                    structure_name = caps.to_string()
+                    width = caps.get_structure(0).get_int('width')[1]
+                    height = caps.get_structure(0).get_int('height')[1]
+                    if structure_name.startswith("video") and len(str(width)) < 6:
+                        print "Width:%d, Height:%d" %(width, height)
+                        self.player.set_state(Gst.State.NULL)
                         break
-        elif t == gst.MESSAGE_ERROR:
-            err, debug = message.parse_error()
-            print "Error: %s" % err, debug
-            self.player.set_state(gst.STATE_NULL)
+            elif typ == Gst.MessageType.ERROR:
+                err, debug = message.parse_error()
+                print "Error: %s" % err, debug
+                self.player.set_state(Gst.State.NULL)
 
-    def decoder_callback(self, decoder, pad, data):
-        structure_name = pad.get_caps()[0].get_name()
+    def decoder_callback(self, decoder, pad):
+        caps = pad.query_caps(None)
+        structure_name = caps.to_string()
         if structure_name.startswith("video"):
-            fv_pad = self.fakev.get_pad("sink")
+            fv_pad = self.fakev.get_static_pad("sink")
             pad.link(fv_pad)
         elif structure_name.startswith("audio"):
-            fa_pad = self.fakea.get_pad("sink")
+            fa_pad = self.fakea.get_static_pad("sink")
             pad.link(fa_pad)
 
+GObject.threads_init()
+Gst.init(None)
 GTK_Main()
-gtk.gdk.threads_init()
-gtk.main()
+Gtk.main()
