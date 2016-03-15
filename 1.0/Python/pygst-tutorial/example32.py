@@ -5,6 +5,9 @@ import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject, Gtk
 
+# Needed for window.get_xid(), xvimagesink.set_window_handle(), respectively:
+from gi.repository import GdkX11, GstVideo
+
 class GTK_Main(object):
     
     def __init__(self):
@@ -94,11 +97,11 @@ class GTK_Main(object):
             imagesink.set_window_handle(self.movie_window.get_property('window').get_xid())
     
     def demuxer_callback(self, demuxer, pad):
-        if pad.get_property("template").name_template == "video_%02d":
-            qv_pad = self.queuev.get_pad("sink")
+        if pad.get_property("template").name_template == "video_%02x":
+            qv_pad = self.queuev.get_static_pad("sink")
             pad.link(qv_pad)
-        elif pad.get_property("template").name_template == "audio_%02d":
-            qa_pad = self.queuea.get_pad("sink")
+        elif pad.get_property("template").name_template == "audio_%02x":
+            qa_pad = self.queuea.get_static_pad("sink")
             pad.link(qa_pad)
 
 
