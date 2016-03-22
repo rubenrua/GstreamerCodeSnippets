@@ -66,6 +66,6 @@ class GTK_Main(object):
 
 
 GObject.threads_init()
-Gst.init(None)        
+Gst.init(None)
 GTK_Main()
 Gtk.main()
