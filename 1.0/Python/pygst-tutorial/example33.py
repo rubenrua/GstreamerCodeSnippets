@@ -41,16 +41,9 @@ class GTK_Main(object):
         self.queuev = Gst.ElementFactory.make("queue", "queuev")
         colorspace = Gst.ElementFactory.make("videoconvert", "colorspace")
 
-        self.player.add(source)
-        self.player.add(demuxer)
-        self.player.add(self.video_decoder)
-        self.player.add(self.audio_decoder)
-        self.player.add(audioconv)
-        self.player.add(audiosink)
-        self.player.add(videosink)
-        self.player.add(self.queuea)
-        self.player.add(self.queuev)
-        self.player.add(colorspace)
+        for ele in (source, demuxer, self.video_decoder, self.audio_decoder,
+                audioconv, audiosink, videosink, self.queuea, self.queuev, colorspace):
+            self.player.add(ele)
 
         source.link(demuxer)
 
