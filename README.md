@@ -50,7 +50,17 @@ Other Sources
 * HTTP: https://github.com/nicolargo/gstpipelinearena
 * SRC: https://github.com/nicolargo/gstpipelinearena.git
 
+### Gstreamer Application Development
 
+* Language: C
+* GStreamer Version: 1.7.90
+* HTTP: https://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/manual.pdf
+
+### Linuxtv Gstreamer wiki
+
+* Language: Shell
+* GStreamer Version: 1.0
+* HTTP: https://www.linuxtv.org/wiki/index.php/GStreamer
 
 ### Blogs
 
