@@ -3,7 +3,7 @@
 import sys, os
 import gi
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GObject, Gtk
+from gi.repository import Gst, GObject, Gtk, Gdk
 
 # Needed for window.get_xid(), xvimagesink.set_window_handle(), respectively:
 from gi.repository import GdkX11, GstVideo
@@ -42,9 +42,10 @@ class GTK_Main(object):
                 self.button.set_label("Stop")
                 self.player.set_property("uri", "file://" + filepath)
                 self.player.set_state(Gst.State.PLAYING)
-            else:
-                self.player.set_state(Gst.State.NULL)
-                self.button.set_label("Start")
+        else:
+            self.player.set_state(Gst.State.NULL)
+            self.movie_window.override_background_color(0, Gdk.RGBA.from_color(Gdk.color_parse("black")))
+            self.button.set_label("Start")
                 
     def on_message(self, bus, message):
         t = message.type
@@ -65,6 +66,6 @@ class GTK_Main(object):
 
 
 GObject.threads_init()
-Gst.init(None)        
+Gst.init(None)
 GTK_Main()
 Gtk.main()

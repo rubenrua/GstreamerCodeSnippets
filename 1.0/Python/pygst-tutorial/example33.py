@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+import sys, os
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject, Gtk, Gdk
@@ -12,7 +12,7 @@ class GTK_Main(object):
 
     def __init__(self):
         window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
-        window.set_title("Video-Player")
+        window.set_title("MP4-Player")
         window.set_default_size(500, 400)
         window.connect("destroy", Gtk.main_quit, "WM destroy")
         vbox = Gtk.VBox()
@@ -27,19 +27,33 @@ class GTK_Main(object):
         self.movie_window = Gtk.DrawingArea()
         vbox.add(self.movie_window)
         window.show_all()
-        
-        self.player = Gst.ElementFactory.make("playbin", "player")
 
-        self.bin = Gst.Bin.new("my-bin")
-        timeoverlay = Gst.ElementFactory.make("timeoverlay")
-        self.bin.add(timeoverlay)
-        pad = timeoverlay.get_static_pad("video_sink")
-        ghostpad = Gst.GhostPad.new("sink", pad)
-        self.bin.add_pad(ghostpad)
-        videosink = Gst.ElementFactory.make("autovideosink")
-        self.bin.add(videosink)
-        timeoverlay.link(videosink)
-        self.player.set_property("video-sink", self.bin)
+        self.player = Gst.Pipeline.new("player")
+        source = Gst.ElementFactory.make("filesrc", "file-source")
+        demuxer = Gst.ElementFactory.make("qtdemux", "demuxer")
+        demuxer.connect("pad-added", self.demuxer_callback)
+        self.video_decoder = Gst.ElementFactory.make("avdec_h264", "video-decoder")
+        self.audio_decoder = Gst.ElementFactory.make("avdec_aac", "audio-decoder")
+        audioconv = Gst.ElementFactory.make("audioconvert", "converter")
+        audiosink = Gst.ElementFactory.make("autoaudiosink", "audio-output")
+        videosink = Gst.ElementFactory.make("autovideosink", "video-output")
+        self.queuea = Gst.ElementFactory.make("queue", "queuea")
+        self.queuev = Gst.ElementFactory.make("queue", "queuev")
+        colorspace = Gst.ElementFactory.make("videoconvert", "colorspace")
+
+        for ele in (source, demuxer, self.video_decoder, self.audio_decoder,
+                audioconv, audiosink, videosink, self.queuea, self.queuev, colorspace):
+            self.player.add(ele)
+
+        source.link(demuxer)
+
+        self.queuev.link(self.video_decoder)
+        self.video_decoder.link(colorspace)
+        colorspace.link(videosink)
+
+        self.queuea.link(self.audio_decoder)
+        self.audio_decoder.link(audioconv)
+        audioconv.link(audiosink)
 
         bus = self.player.get_bus()
         bus.add_signal_watch()
@@ -52,7 +66,7 @@ class GTK_Main(object):
             filepath = self.entry.get_text()
             if os.path.isfile(filepath):
                 self.button.set_label("Stop")
-                self.player.set_property("uri", "file://" + filepath)
+                self.player.get_by_name("file-source").set_property("location", filepath)
                 self.player.set_state(Gst.State.PLAYING)
         else:
             self.player.set_state(Gst.State.NULL)
@@ -65,9 +79,9 @@ class GTK_Main(object):
             self.player.set_state(Gst.State.NULL)
             self.button.set_label("Start")
         elif t == Gst.MessageType.ERROR:
-            self.player.set_state(Gst.State.NULL)
             err, debug = message.parse_error()
             print "Error: %s" % err, debug
+            self.player.set_state(Gst.State.NULL)
             self.button.set_label("Start")
 
     def on_sync_message(self, bus, message):
@@ -76,7 +90,16 @@ class GTK_Main(object):
             imagesink.set_property("force-aspect-ratio", True)
             imagesink.set_window_handle(self.movie_window.get_property('window').get_xid())
 
-GObject.threads_init()
+    def demuxer_callback(self, demuxer, pad):
+        if pad.get_property("template").name_template == "video_%u":
+            qv_pad = self.queuev.get_static_pad("sink")
+            pad.link(qv_pad)
+        elif pad.get_property("template").name_template == "audio_%u":
+            qa_pad = self.queuea.get_static_pad("sink")
+            pad.link(qa_pad)
+
+
 Gst.init(None)
 GTK_Main()
+GObject.threads_init()
 Gtk.main()

@@ -48,6 +48,7 @@ class GTK_Main(object):
             self.player.set_state(Gst.State.PLAYING)
         else:
             self.player.set_state(Gst.State.NULL)
+            self.movie_window.override_background_color(0, Gdk.RGBA.from_color(Gdk.color_parse("black")))
             self.button.set_label("Start")
 
     def exit(self, widget, data=None):

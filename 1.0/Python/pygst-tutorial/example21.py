@@ -6,7 +6,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject, Gtk
 
 class GTK_Main(object):
-    
+
     def __init__(self):
         window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
         window.set_title("Audio-Player")
@@ -35,9 +35,9 @@ class GTK_Main(object):
                 self.button.set_label("Stop")
                 self.player.set_property("uri", "file://" + filepath)
                 self.player.set_state(Gst.State.PLAYING)
-            else:
-                self.player.set_state(Gst.State.NULL)
-                self.button.set_label("Start")
+        else:
+            self.player.set_state(Gst.State.NULL)
+            self.button.set_label("Start")
 
     def on_message(self, bus, message):
         t = message.type
