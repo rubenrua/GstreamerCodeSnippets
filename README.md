@@ -28,7 +28,7 @@ Other Sources
 
 * Language: Python
 * GStreamer Version: 0.10
-* HTTP: http://pygstdocs.berlios.de/pygst-tutorial/index.html
+* HTTP: http://brettviren.github.io/pygst-tutorial-org/pygst-tutorial.pdf
 
 ### Novacut Gstreamer 1.0 Wiki
 
