@@ -9,7 +9,6 @@ Gstreamer Code Snippets in C, Python and Shell (gst-launch).
 
 Other Sources
 ------------------
-
 ### GStreamer SDK documentation
 
 * Language: C
@@ -55,6 +54,12 @@ Other Sources
 * Language: C
 * GStreamer Version: 1.7.90
 * HTTP: https://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/manual.pdf
+
+### Python GObject Introspection API Reference
+
+* Language: Python
+* GStreamer Version: 1.0
+* HTTP: https://lazka.github.io/pgi-docs/#Gst-1.0
 
 ### Linuxtv Gstreamer wiki
 
