@@ -2,7 +2,10 @@
  * 16/08/2016
  *
  * gcc takepic.c -o takepic `pkg-config --cflags --libs gstreamer-1.0 gstreamer-video-1.0`
- * See: http://gstreamer-devel.966125.n4.nabble.com/Take-snapshot-from-running-pipeline-in-gstreamer-with-iOS-td4678410.html
+ *
+ * See:
+ * - http://gstreamer-devel.966125.n4.nabble.com/Take-snapshot-from-running-pipeline-in-gstreamer-with-iOS-td4678410.html
+ * - https://github.com/GStreamer/gst-editing-services/blob/1.9.1/ges/ges-pipeline.c#L1235
  */
 
 #include <gst/gst.h>
@@ -145,4 +148,5 @@ static void take_pic(CustomData *data)
     }
 
     gst_sample_unref (to_sample);
+    gst_buffer_unmap (buf, &map_info);
 }
