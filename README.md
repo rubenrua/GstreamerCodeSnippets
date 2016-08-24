@@ -75,6 +75,17 @@ Other Sources
 * http://blog.nirbheek.in/
 * http://gstreamer.freedesktop.org/planet/
 
+### TOOLS
+
+* https://github.com/GNOME/pitivi
+* https://github.com/GNOME/cheese
+* https://github.com/GNOME/transmageddon
+* https://github.com/teltek/Galicaster
+* https://github.com/virinext/pipeviz
+* https://github.com/timvideos/gst-switch
+* https://github.com/voc/voctomix
+* More in: https://gstreamer.freedesktop.org/apps/
+
 ### Other
 
 * https://github.com/joshdoe/gst-plugins-vision
