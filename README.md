@@ -42,7 +42,7 @@ Other Sources
 * GStreamer Version: 0.10
 * HTTP: http://wiki.oz9aec.net/index.php/Gstreamer_cheat_sheet
 
-### GStreamer pipeline arena 
+### GStreamer pipeline arena
 
 * Language: Shell
 * GStreamer Version: 0.10
@@ -72,7 +72,12 @@ Other Sources
 * https://coaxion.net/blog/
 * http://blogs.gnome.org/uraeus/
 * http://schleef.org/blog/
+* http://blog.nirbheek.in/
 * http://gstreamer.freedesktop.org/planet/
+
+### Other
+
+* https://github.com/joshdoe/gst-plugins-vision
 
 ### TIPS
 
