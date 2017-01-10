@@ -1,7 +1,7 @@
 GStreamer SDK Tutorials in Python
 ===================
 
-Python version of gstremaer SDK [1] tutorials [2].
+Python version of gstreamer SDK [1] tutorials [2].
 The following sections introduce a series of tutorials designed to help you learn how to use GStreamer, the multi-platform, modular, open-source, media streaming framework.
 
 Tutorials
