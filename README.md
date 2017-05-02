@@ -4,7 +4,7 @@ GstreamerCodeSnippets
 Description
 -----------------
 
-Gstreamer Code Snippets in C, Python and Shell (gst-launch).
+Gstreamer Code Snippets in C, Python, Rust and Shell (gst-launch).
 
 
 Other Sources
@@ -66,6 +66,19 @@ Other Sources
 * Language: Shell
 * GStreamer Version: 1.0
 * HTTP: https://www.linuxtv.org/wiki/index.php/GStreamer
+
+### Writing GStreamer Applications with Rust
+
+* Language: Rust
+* Gstreamer Version: 1.x
+* HTTP: https://github.com/arturoc/gstreamer1.0-rs
+
+### Writing GStreamer Plugins with Rust
+
+* Language: Rust
+* GStreamer Version: 1.x
+* HTTP: https://coaxion.net/blog/2016/05/writing-gstreamer-plugins-and-elements-in-rust/
+* SRC: https://github.com/sdroege/gst-plugin-rs/
 
 ### Blogs
 
