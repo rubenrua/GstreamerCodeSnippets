@@ -80,6 +80,12 @@ Other Sources
 * HTTP: https://coaxion.net/blog/2016/05/writing-gstreamer-plugins-and-elements-in-rust/
 * SRC: https://github.com/sdroege/gst-plugin-rs/
 
+### How to Setup a Modern GStreamer Development Environment Using Meson and gst-build
+
+* Language: All
+* GStreamer Version: 1.x
+* HTTP: https://blogs.s-osg.org/setup-modern-gstreamer-development-environment-using-meson-gst-build/
+
 ### Blogs
 
 * https://coaxion.net/blog/
