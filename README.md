@@ -71,7 +71,8 @@ Other Sources
 
 * Language: Rust
 * Gstreamer Version: 1.x
-* HTTP: https://github.com/arturoc/gstreamer1.0-rs
+* HTTP: https://github.com/sdroege/gstreamer-rs
+* Exmaples: https://github.com/philn/glide, https://github.com/fengalin/media-toc
 
 ### Writing GStreamer Plugins with Rust
 
