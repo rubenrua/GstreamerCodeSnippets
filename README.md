@@ -72,7 +72,7 @@ Other Sources
 * Language: Rust
 * Gstreamer Version: 1.x
 * HTTP: https://github.com/sdroege/gstreamer-rs
-* Exmaples: https://github.com/philn/glide, https://github.com/fengalin/media-toc
+* Examples: https://github.com/philn/glide, https://github.com/fengalin/media-toc
 
 ### Writing GStreamer Plugins with Rust
 
@@ -86,6 +86,15 @@ Other Sources
 * Language: All
 * GStreamer Version: 1.x
 * HTTP: https://blogs.s-osg.org/setup-modern-gstreamer-development-environment-using-meson-gst-build/
+
+### Speech Recognition – Mozilla’s DeepSpeech, GStreamer and IBus
+
+* Language: All
+* GStreamer Version: 1.x
+* HTTP: http://blog.mikeasoft.com/2017/12/30/speech-recognition-mozillas-deepspeech-gstreamer-and-ibus/
+* GIT: https://github.com/Elleo/gst-deepspeech
+
+
 
 ### Blogs
 
