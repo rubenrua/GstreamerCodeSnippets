@@ -94,7 +94,11 @@ Other Sources
 * HTTP: http://blog.mikeasoft.com/2017/12/30/speech-recognition-mozillas-deepspeech-gstreamer-and-ibus/
 * GIT: https://github.com/Elleo/gst-deepspeech
 
+### Workshop: GTK+ & GStreamer (Application Development in Rust)
 
+* Language: Rust
+* GStreamer Version: 1.x
+* GIT : https://github.com/sdroege/rustfest-rome18-gtk-gst-workshop
 
 ### Blogs
 
