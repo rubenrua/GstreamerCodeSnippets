@@ -19,6 +19,66 @@ typedef struct _CustomData {
 } CustomData;
 
 
+static void
+zoom_in (CustomData *data, gdouble x, gdouble y ) {
+    gint xpos = 0, ypos = 0;
+    gint width = 0, height = 0;
+    gint new_xpos = 0, new_ypos = 0;
+
+    g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, "width", &width, "height", &height, NULL);
+
+    g_object_set(G_OBJECT(data->mixer_pad), "width", width + 64, "height", height + 48, NULL);
+
+    new_xpos = xpos - (x / 640) * 64;
+    new_ypos = ypos - (y / 480) * 48;
+
+    if (new_xpos != xpos)
+        g_object_set(G_OBJECT(data->mixer_pad), "xpos", new_xpos, NULL);
+
+    if (new_ypos != ypos)
+        g_object_set(G_OBJECT(data->mixer_pad), "ypos", new_ypos, NULL);
+}
+
+static void
+zoom_out (CustomData *data, gdouble x, gdouble y ) {
+    gint xpos = 0, ypos = 0;
+    gint width = 0, height = 0;
+    gint new_xpos = 0, new_ypos = 0;
+
+    g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, "width", &width, "height", &height, NULL);
+
+    g_object_set(G_OBJECT(data->mixer_pad), "width", width - 64, "height", height - 48, NULL);
+
+    new_xpos = xpos + (x / 640) * 64;
+    new_ypos = ypos + (y / 480) * 48;
+
+    if (new_xpos != xpos)
+        g_object_set(G_OBJECT(data->mixer_pad), "xpos", new_xpos, NULL);
+
+    if (new_ypos != ypos)
+        g_object_set(G_OBJECT(data->mixer_pad), "ypos", new_ypos, NULL);
+
+}
+
+static void
+reset_zoom (CustomData *data) {
+    gint xpos = 0, ypos = 0;
+    gint width = 0, height = 0;
+
+    g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, "width", &width, "height", &height, NULL);
+
+    //DEBUG only notify if all values change????? (and implement a reset)
+    if (xpos != 0)
+        g_object_set(G_OBJECT(data->mixer_pad), "xpos", 0, NULL);
+    if (ypos != 0)
+        g_object_set(G_OBJECT(data->mixer_pad), "ypos", 0.0, NULL);
+    if (width != WIDTH)
+        g_object_set(G_OBJECT(data->mixer_pad), "width", WIDTH, NULL);
+    if (height != HEIGHT)
+        g_object_set(G_OBJECT(data->mixer_pad), "height", HEIGHT, NULL);
+
+}
+
 static GstPadProbeReturn
 events_cb (GstPad * pad __attribute__((unused)), GstPadProbeInfo * probe_info, gpointer user_data)
 {
@@ -38,13 +98,12 @@ events_cb (GstPad * pad __attribute__((unused)), GstPadProbeInfo * probe_info, g
         gint new_xpos = 0, new_ypos = 0;
         gint width = 0, height = 0;
 
-        g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, "width", &width, "height", &height, NULL);
-
         switch (gst_navigation_event_get_type (event)) {
         case GST_NAVIGATION_EVENT_KEY_PRESS:
-
             gst_navigation_event_parse_key_event (event, &key);
             g_return_val_if_fail (key != NULL, GST_PAD_PROBE_OK);
+
+            g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, NULL);
 
             if (strcmp (key, "Left") == 0) {
                 //g_object_set(G_OBJECT(data->mixer_pad), "xpos", xpos - 10, "ypos", ypos, NULL);
@@ -56,29 +115,21 @@ events_cb (GstPad * pad __attribute__((unused)), GstPadProbeInfo * probe_info, g
             } else if (strcmp (key, "Down") == 0) {
                 g_object_set(G_OBJECT(data->mixer_pad), "ypos", ypos + 10, NULL);
             } else if (strcmp (key, "plus") == 0) {
-                g_object_set(G_OBJECT(data->mixer_pad), "width", width + 64, "height", height + 48, NULL);
+                zoom_in(data, 320.0, 240.0);
             } else if (strcmp (key, "minus") == 0) {
-                g_object_set(G_OBJECT(data->mixer_pad), "width", width - 64, "height", height - 48, NULL);
+                zoom_out(data, 320.0, 240.0);
             } else if (strcmp (key, "r") == 0) {
-                //DEBUG only notify if all values change????? (and implement a reset)
-                if (xpos != 0)
-                    g_object_set(G_OBJECT(data->mixer_pad), "xpos", 0, NULL);
-                if (ypos != 0)
-                    g_object_set(G_OBJECT(data->mixer_pad), "ypos", 0.0, NULL);
-                if (width != WIDTH)
-                    g_object_set(G_OBJECT(data->mixer_pad), "width", WIDTH, NULL);
-                if (height != HEIGHT)
-                    g_object_set(G_OBJECT(data->mixer_pad), "height", HEIGHT, NULL);
-
+                reset_zoom (data);
             }
 
             break;
 
         case GST_NAVIGATION_EVENT_MOUSE_MOVE:
             if (gst_navigation_event_parse_mouse_move_event (event, &x, &y)) {
-
-
                 if (clicked) {
+
+                    g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, NULL);
+
                     new_xpos = clicked_xpos + (x - clicked_x);
                     new_ypos = clicked_ypos + (y - clicked_y);
 
@@ -87,60 +138,51 @@ events_cb (GstPad * pad __attribute__((unused)), GstPadProbeInfo * probe_info, g
 
                     if (new_ypos != ypos)
                         g_object_set(G_OBJECT(data->mixer_pad), "ypos", new_ypos, NULL);
-
                 }
             }
             break;
         case GST_NAVIGATION_EVENT_MOUSE_BUTTON_PRESS:
             if (gst_navigation_event_parse_mouse_button_event (event, &button, &clicked_x, &clicked_y)) {
 
-                if (button == 1) {
+                if (button == 1 || button == 272) {
+
+                    g_object_get(G_OBJECT(data->mixer_pad), "xpos", &xpos, "ypos", &ypos, NULL);
+
                     clicked = TRUE;
                     clicked_xpos = xpos;
                     clicked_ypos = ypos;
-                } else if (button == 2 || button == 3){
-                    if (xpos != 0)
-                        g_object_set(G_OBJECT(data->mixer_pad), "xpos", 0, NULL);
-                    if (ypos != 0)
-                        g_object_set(G_OBJECT(data->mixer_pad), "ypos", 0.0, NULL);
-                    if (width != WIDTH)
-                        g_object_set(G_OBJECT(data->mixer_pad), "width", WIDTH, NULL);
-                    if (height != HEIGHT)
-                        g_object_set(G_OBJECT(data->mixer_pad), "height", HEIGHT, NULL);
+                } else if (button == 2 || button == 3 || button == 274 || button == 273){
+                    reset_zoom (data);
                 } else if (button == 4 ) {
-                    g_object_set(G_OBJECT(data->mixer_pad), "width", width + 64, "height", height + 48, NULL);
-
-                    new_xpos = xpos - (clicked_x / 640) * 64;
-                    new_ypos = ypos - (clicked_y / 480) * 48;
-
-                    if (new_xpos != xpos)
-                        g_object_set(G_OBJECT(data->mixer_pad), "xpos", new_xpos, NULL);
-
-                    if (new_ypos != ypos)
-                        g_object_set(G_OBJECT(data->mixer_pad), "ypos", new_ypos, NULL);
-
+                    zoom_in(data, clicked_x, clicked_y);
                 } else if (button == 5 ) {
-                    g_object_set(G_OBJECT(data->mixer_pad), "width", width - 64, "height", height - 48, NULL);
-
-                    new_xpos = xpos + (clicked_x / 640) * 64;
-                    new_ypos = ypos + (clicked_y / 480) * 48;
-
-                    if (new_xpos != xpos)
-                        g_object_set(G_OBJECT(data->mixer_pad), "xpos", new_xpos, NULL);
-
-                    if (new_ypos != ypos)
-                        g_object_set(G_OBJECT(data->mixer_pad), "ypos", new_ypos, NULL);
+                    zoom_out(data, clicked_x, clicked_y);
                 }
 
             }
             break;
         case GST_NAVIGATION_EVENT_MOUSE_BUTTON_RELEASE:
+
             if (gst_navigation_event_parse_mouse_button_event (event, &button, &x, &y)) {
-                if (button == 1) {
+
+                if (button == 1 || button == 272) {
                     clicked = FALSE;
                 }
             }
             break;
+        case GST_NAVIGATION_EVENT_MOUSE_SCROLL:
+
+            gdouble delta_y = 0;
+
+            if (gst_navigation_event_parse_mouse_scroll_event (event, &clicked_x, &clicked_y, NULL, &delta_y)) {
+
+                if  (delta_y > 0) {
+                    zoom_in(data, clicked_x, clicked_y);
+                } else if (delta_y < 0) {
+                    zoom_out(data, clicked_x, clicked_y);
+                }
+            }
+
         default:
             break;
         }
@@ -169,8 +211,8 @@ int main(int argc, char *argv[]) {
     /* Create the elements */
     data.pipeline = gst_parse_launch(
                                      "glvideomixer name=mix background=1 sink_0::xpos=0 sink_0::ypos=0 sink_0::zorder=0 sink_0::width=640 sink_0::height=480 ! glimagesinkelement "
-                                     "v4l2src name=src ! video/x-raw,framerate=30/1,width=640,height=480 ! queue ! videoconvert ! mix.sink_0",
-                                     //"gltestsrc pattern=mandelbrot name=src ! video/x-raw(memory:GLMemory),framerate=30/1,width=640,height=480,pixel-aspect-ratio=1/1 ! queue ! mix.sink_0",
+                                     //"v4l2src name=src ! video/x-raw,framerate=30/1,width=640,height=480 ! queue ! videoconvert ! mix.sink_0",
+                                     "gltestsrc pattern=mandelbrot name=src ! video/x-raw(memory:GLMemory),framerate=30/1,width=640,height=480,pixel-aspect-ratio=1/1 ! queue ! mix.sink_0",
                                      NULL);
 
     mixer = gst_bin_get_by_name( GST_BIN( data.pipeline), "mix");
