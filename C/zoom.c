@@ -2,6 +2,8 @@
  * 21/01/2023
  *
  * gcc -Wall -Wextra zoom.c -o zoom `pkg-config --cflags --libs gstreamer-1.0 gstreamer-video-1.0`
+ *
+ * UPDATE: example was done upstream in https://gitlab.freedesktop.org/gstreamer/gstreamer-rs/-/blob/main/examples/src/bin/zoom.rs
  */
 
 #include <gst/gst.h>
