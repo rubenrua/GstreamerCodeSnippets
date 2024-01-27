@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "utils/xdgscreencapsrc",
+]
+
+[profile.release]
+lto = true
+opt-level = 3
+debug = true
+panic = 'unwind'
+
+[profile.dev]
+opt-level = 1

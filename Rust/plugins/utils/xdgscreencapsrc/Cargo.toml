@@ -1,0 +1,46 @@
+[package]
+name = "gst-plugin-xdgscreencapsrc"
+version = "0.12.0-alpha.1"
+authors = ["Ruben Gonzalez <rgonzalez@fluendo.com"]
+license = "MPL-2.0"
+description = "GStreamer xdg-desktop-portal screen capture plugin"
+repository = "https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs"
+edition = "2021"
+rust-version = "1.70"
+
+[dependencies]
+gst = { package = "gstreamer", git = "https://gitlab.freedesktop.org/gstreamer/gstreamer-rs" }
+parking_lot = "0.12"
+zbus = { version = "3.13.0", default-features = false, features = ["tokio"] }
+
+
+[dev-dependencies]
+either = "1.0"
+gst-check = { package = "gstreamer-check", git = "https://gitlab.freedesktop.org/gstreamer/gstreamer-rs" }
+
+[lib]
+name = "gstxdgscreencapsrc"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[build-dependencies]
+gst-plugin-version-helper = "0.8"
+
+[features]
+static = []
+capi = []
+doc = ["gst/v1_18"]
+
+[package.metadata.capi]
+min_version = "0.9.21"
+
+[package.metadata.capi.header]
+enabled = false
+
+[package.metadata.capi.library]
+install_subdir = "gstreamer-1.0"
+versioning = false
+import_library = false
+
+[package.metadata.capi.pkg_config]
+requires_private = "gstreamer-1.0, gstreamer-audio-1.0, gstreamer-video-1.0, gobject-2.0, glib-2.0, gmodule-2.0"
