@@ -17,7 +17,7 @@ Based on https://gitlab.gnome.org/-/snippets/19
 
 
 TODOS:
-[ ] using ashpd
+[x] using ashpd
 [ ] properties
 [ ] documetation
 

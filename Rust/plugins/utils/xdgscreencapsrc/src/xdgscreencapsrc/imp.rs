@@ -17,151 +17,54 @@ use gst::glib;
 use gst::prelude::*;
 use gst::subclass::prelude::*;
 
-use std::collections::HashMap;
-use std::error::Error;
-use std::sync::Arc;
-
-use zbus::{
-    blocking::Connection, dbus_proxy, zvariant::Array, zvariant::ObjectPath, zvariant::Value,
+use ashpd::{
+    desktop::screencast::{CursorMode, PersistMode, Screencast, SourceType},
+    WindowIdentifier,
 };
 
 use gst::glib::once_cell::sync::Lazy;
 use parking_lot::Mutex;
 
-#[dbus_proxy(
-    interface = "org.freedesktop.portal.ScreenCast",
-    default_service = "org.freedesktop.portal.Desktop",
-    default_path = "/org/freedesktop/portal/desktop",
-    gen_blocking = true,
-    gen_async = false
-)]
-trait ScreenCast {
-    /// CreateSession method
-    fn create_session(
-        &self,
-        options: HashMap<&str, zbus::zvariant::Value<'_>>,
-    ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-
-    /// SelectSources method
-    fn select_sources(
-        &self,
-        session_handle: &ObjectPath<'_>,
-        options: HashMap<&str, zbus::zvariant::Value<'_>>,
-    ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-
-    /// Start method
-    fn start(
-        &self,
-        session_handle: &ObjectPath<'_>,
-        parent_window: &str,
-        options: HashMap<&str, zbus::zvariant::Value<'_>>,
-    ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-
-    /// OpenPipeWireRemote method
-    fn open_pipe_wire_remote(
-        &self,
-        session_handle: &ObjectPath<'_>,
-        options: HashMap<&str, zbus::zvariant::Value<'_>>,
-    ) -> zbus::Result<zbus::zvariant::OwnedFd>;
-
-    /// AvailableCursorModes property
-    #[dbus_proxy(property)]
-    fn available_cursor_modes(&self) -> zbus::Result<u32>;
-
-    /// AvailableSourceTypes property
-    #[dbus_proxy(property)]
-    fn available_source_types(&self) -> zbus::Result<u32>;
-
-    /// version property
-    #[dbus_proxy(property, name = "version")]
-    fn version(&self) -> zbus::Result<u32>;
+pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
+    static TOKIO_RT: once_cell::sync::Lazy<tokio::runtime::Runtime> =
+        once_cell::sync::Lazy::new(|| {
+            tokio::runtime::Builder::new_current_thread()
+                .enable_io()
+                .enable_time()
+                .build()
+                .expect("launch of single-threaded tokio runtime")
+        });
+    TOKIO_RT.block_on(future)
 }
 
-fn call_portal(
-    connection: &Connection,
-    name: &str,
-    token: &str,
-    f: impl Fn(),
-) -> zbus::Result<Arc<zbus::Message>> {
-    let path = format!("/org/freedesktop/portal/desktop/request/{name}/{token}");
-    let proxy2: zbus::blocking::Proxy = zbus::blocking::ProxyBuilder::new_bare(connection)
-        .interface("org.freedesktop.portal.Request")?
-        .path(path)?
-        .destination("org.freedesktop.portal.Desktop")?
-        .build()?;
-    let mut request = proxy2.receive_signal("Response")?;
+async fn portal_main() -> ashpd::Result<(String, String)> {
+    let proxy = Screencast::new().await?;
+    let session = proxy.create_session().await?;
+    proxy
+        .select_sources(
+            &session,
+            CursorMode::Metadata,
+            SourceType::Monitor | SourceType::Window,
+            true,
+            None,
+            PersistMode::DoNot,
+        )
+        .await?;
 
-    f();
-    let message = request.next();
+    let response = proxy
+        .start(&session, &WindowIdentifier::default())
+        .await?
+        .response()?;
 
-    Ok(message.unwrap())
-}
-
-fn portal_main() -> Result<(String, String), Box<dyn Error>> {
-    let connection = Connection::session()?;
-
-    let name = connection
-        .unique_name()
-        .ok_or("error")?
-        .replace(':', "")
-        .replace('.', "_");
-    println!("unique name: {name}");
-
-    let proxy = ScreenCastProxy::new(&connection)?;
-
-    let token = "u1";
-    let f = || {
-        let mut options = HashMap::new();
-        options.insert("session_handle_token", token.into());
-        options.insert("handle_token", token.into());
-        proxy.create_session(options).unwrap();
-    };
-    let message = call_portal(&connection, &name, token, f)?;
-
-    let body: (u32, HashMap<&str, zbus::zvariant::Value<'_>>) = message.body().unwrap();
-    let v = &body.1["session_handle"];
-    let session = ObjectPath::try_from(String::try_from(v).unwrap()).unwrap();
-
-    let token = "u2";
-    let f = || {
-        let mut options = HashMap::new();
-        options.insert("multiple", false.into());
-        options.insert("types", 3u32.into()); // dbus.UInt32(1|2)
-        options.insert("handle_token", token.into());
-        proxy.select_sources(&session, options).unwrap();
-    };
-    let message = call_portal(&connection, &name, token, f)?;
-    let _body: (u32, HashMap<&str, zbus::zvariant::Value<'_>>) = message.body().unwrap();
-
-    let token = "u3";
-    let f = || {
-        let mut options = HashMap::new();
-        options.insert("handle_token", token.into());
-        proxy.start(&session, "", options).unwrap();
-    };
-    let message = call_portal(&connection, &name, token, f)?;
-    let body: (u32, HashMap<&str, zbus::zvariant::Value<'_>>) = message.body().unwrap();
-
-    if body.0 != 0 {
-        return Err("No stream selected".into());
+    if let Some(first_value) = response.streams().iter().next() {
+        let id = first_value.pipe_wire_node_id();
+        println!("node id: {}", id);
+        println!("size: {:?}", first_value.size());
+        println!("position: {:?}", first_value.position());
+        Ok((format!("{id}"), format!("{id}")))
+    } else {
+        Err(ashpd::Error::NoResponse)
     }
-
-    let v = &body.1["streams"];
-    let av = <Array<'_>>::try_from(v).unwrap();
-    let av = <Vec<Value<'_>>>::try_from(av).unwrap();
-    for v in av {
-        let vv = <(Value<'_>, Value<'_>)>::try_from(v).unwrap();
-        let vv = u32::try_from(vv.0).unwrap();
-
-        //# 4 open_pipe_wire_remote
-        let options = HashMap::new();
-        let fd = proxy.open_pipe_wire_remote(&session, options)?;
-        let fdstr = format!("{}", fd); // TODO OwnedFd as gst property
-
-        return Ok((fdstr, vv.to_string()));
-    }
-
-    Err("No path".into())
 }
 
 const DEFAULT_RECORD: bool = false;
@@ -354,14 +257,10 @@ impl ElementImpl for XdpScreenCast {
 
         let success = self.parent_change_state(transition)?;
 
-        match transition {
-            gst::StateChange::NullToReady => {
-                let (fd, path) = portal_main().unwrap();
-                gst::debug!(CAT, imp: self, "xdg-desktop-portal values: fd={:?} path={:?}", fd, path);
-                self.src.set_property("fd", fd.parse::<i32>().unwrap());
-                self.src.set_property("path", path);
-            }
-            _ => (),
+        if transition == gst::StateChange::NullToReady {
+            let (fd, path) = block_on(portal_main()).unwrap();
+            self.src.set_property("fd", fd.parse::<i32>().unwrap());
+            self.src.set_property("path", path);
         }
 
         Ok(success)
