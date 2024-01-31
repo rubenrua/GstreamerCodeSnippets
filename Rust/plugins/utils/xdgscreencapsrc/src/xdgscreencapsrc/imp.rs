@@ -18,9 +18,73 @@ use gst::prelude::*;
 use gst::subclass::prelude::*;
 
 use ashpd::{
-    desktop::screencast::{CursorMode, PersistMode, Screencast, SourceType},
+    desktop::screencast::{PersistMode, Screencast},
     WindowIdentifier,
 };
+
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, glib::Enum)]
+#[repr(u32)]
+#[enum_type(name = "SourceType")]
+pub enum SourceType {
+    #[enum_value(name = "A monitor", nick = "monitor")]
+    Monitor,
+    #[enum_value(name = "A specific window", nick = "window")]
+    Window,
+    #[enum_value(name = "Virtual", nick = "virtual")]
+    Virtual,
+    #[enum_value(name = "monitor+window+virtual", nick = "all")]
+    All,
+}
+
+impl From<SourceType> for ashpd::enumflags2::BitFlags<ashpd::desktop::screencast::SourceType, u32> {
+    fn from(v: SourceType) -> Self {
+        use ashpd::desktop::screencast;
+
+        match v {
+            SourceType::Monitor => screencast::SourceType::Monitor.into(),
+            SourceType::Window => screencast::SourceType::Window.into(),
+            SourceType::Virtual => screencast::SourceType::Virtual.into(),
+            SourceType::All => {
+                screencast::SourceType::Monitor
+                    | screencast::SourceType::Window
+                    | screencast::SourceType::Virtual
+            }
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, glib::Enum)]
+#[repr(u32)]
+#[enum_type(name = "CursorMode")]
+pub enum CursorMode {
+    #[enum_value(
+        name = "The cursor is not part of the screen cast stream",
+        nick = "hidden"
+    )]
+    Hidden,
+    #[enum_value(
+        name = "The cursor is embedded as part of the stream buffers",
+        nick = "embedded"
+    )]
+    Embedded,
+    #[enum_value(
+        name = "The cursor is not part of the screen cast stream, but sent as PipeWire stream metadata. Not implemented",
+        nick = "metadata"
+    )]
+    Metadata,
+}
+
+impl From<CursorMode> for ashpd::desktop::screencast::CursorMode {
+    fn from(v: CursorMode) -> Self {
+        use ashpd::desktop::screencast;
+
+        match v {
+            CursorMode::Hidden => screencast::CursorMode::Hidden,
+            CursorMode::Embedded => screencast::CursorMode::Embedded,
+            CursorMode::Metadata => unimplemented!(),
+        }
+    }
+}
 
 use gst::glib::once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -37,14 +101,17 @@ pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
     TOKIO_RT.block_on(future)
 }
 
-async fn portal_main() -> ashpd::Result<(String, String)> {
+async fn portal_main(
+    cursor_mode: CursorMode,
+    source_type: SourceType,
+) -> ashpd::Result<(String, String)> {
     let proxy = Screencast::new().await?;
     let session = proxy.create_session().await?;
     proxy
         .select_sources(
             &session,
-            CursorMode::Metadata,
-            SourceType::Monitor | SourceType::Window,
+            cursor_mode.into(),
+            source_type.into(),
             true,
             None,
             PersistMode::DoNot,
@@ -67,20 +134,20 @@ async fn portal_main() -> ashpd::Result<(String, String)> {
     }
 }
 
-const DEFAULT_RECORD: bool = false;
-const DEFAULT_LIVE: bool = false;
+const DEFAULT_CURSOR_MODE: CursorMode = CursorMode::Hidden;
+const DEFAULT_SOURCE_TYPE: SourceType = SourceType::All;
 
 #[derive(Debug, Clone, Copy)]
 struct Settings {
-    record: bool,
-    live: bool,
+    cursor_mode: CursorMode,
+    source_type: SourceType,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            record: DEFAULT_RECORD,
-            live: DEFAULT_LIVE,
+            cursor_mode: DEFAULT_CURSOR_MODE,
+            source_type: DEFAULT_SOURCE_TYPE,
         }
     }
 }
@@ -122,32 +189,26 @@ impl ObjectSubclass for XdpScreenCast {
 }
 
 impl ObjectImpl for XdpScreenCast {
-    // TODO fix properties
+    // based on https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.ScreenCast.html#org-freedesktop-portal-screencast-selectsources
     fn properties() -> &'static [glib::ParamSpec] {
         static PROPERTIES: Lazy<Vec<glib::ParamSpec>> = Lazy::new(|| {
             vec![
-                glib::ParamSpecBoolean::builder("record")
-                    .nick("Record")
-                    .blurb("Enable/disable recording")
-                    .default_value(DEFAULT_RECORD)
-                    .mutable_playing()
-                    .build(),
-                glib::ParamSpecBoolean::builder("recording")
-                    .nick("Recording")
-                    .blurb("Whether recording is currently taking place")
-                    .default_value(DEFAULT_RECORD)
-                    .read_only()
-                    .build(),
-                glib::ParamSpecBoolean::builder("is-live")
-                    .nick("Live output mode")
-                    .blurb(
-                        "Live output mode: no \"gap eating\", \
-                        forward incoming segment for live input, \
-                        create a gap to fill the paused duration for non-live input",
-                    )
-                    .default_value(DEFAULT_LIVE)
-                    .mutable_ready()
-                    .build(),
+                glib::ParamSpecEnum::builder_with_default::<CursorMode>(
+                    "cursor-mode",
+                    DEFAULT_CURSOR_MODE,
+                )
+                .nick("cursor mode")
+                .blurb("Determines how the cursor will be drawn in the screen cast stream")
+                .mutable_ready()
+                .build(),
+                glib::ParamSpecEnum::builder_with_default::<SourceType>(
+                    "source-type",
+                    DEFAULT_SOURCE_TYPE,
+                )
+                .nick("source type")
+                .blurb("Sets the types of content to record")
+                .mutable_ready()
+                .build(),
             ]
         });
 
@@ -156,31 +217,31 @@ impl ObjectImpl for XdpScreenCast {
 
     fn set_property(&self, _id: usize, value: &glib::Value, pspec: &glib::ParamSpec) {
         match pspec.name() {
-            "record" => {
+            "cursor-mode" => {
                 let mut settings = self.settings.lock();
-                let record = value.get().expect("type checked upstream");
+                let cursor_mode = value.get().expect("type checked upstream");
                 gst::debug!(
                     CAT,
                     imp: self,
-                    "Setting record from {:?} to {:?}",
-                    settings.record,
-                    record
+                    "Setting cursor-mode from {:?} to {:?}",
+                    settings.cursor_mode,
+                    cursor_mode
                 );
 
-                settings.record = record;
+                settings.cursor_mode = cursor_mode;
             }
-            "is-live" => {
+            "source-type" => {
                 let mut settings = self.settings.lock();
-                let live = value.get().expect("type checked upstream");
+                let source_type = value.get().expect("type checked upstream");
                 gst::debug!(
                     CAT,
                     imp: self,
-                    "Setting live from {:?} to {:?}",
-                    settings.live,
-                    live
+                    "Setting source-type from {:?} to {:?}",
+                    settings.source_type,
+                    source_type
                 );
 
-                settings.live = live;
+                settings.source_type = source_type;
             }
             _ => unimplemented!(),
         }
@@ -188,14 +249,13 @@ impl ObjectImpl for XdpScreenCast {
 
     fn property(&self, _id: usize, pspec: &glib::ParamSpec) -> glib::Value {
         match pspec.name() {
-            "record" => {
+            "cursor-mode" => {
                 let settings = self.settings.lock();
-                settings.record.to_value()
+                settings.cursor_mode.to_value()
             }
-            "recording" => (true).to_value(),
-            "is-live" => {
+            "source-type" => {
                 let settings = self.settings.lock();
-                settings.live.to_value()
+                settings.source_type.to_value()
             }
             _ => unimplemented!(),
         }
@@ -255,10 +315,13 @@ impl ElementImpl for XdpScreenCast {
     ) -> Result<gst::StateChangeSuccess, gst::StateChangeError> {
         gst::debug!(CAT, imp: self, "Changing state {:?}", transition);
 
+        let settings = self.settings.lock();
+
         let success = self.parent_change_state(transition)?;
 
         if transition == gst::StateChange::NullToReady {
-            let (fd, path) = block_on(portal_main()).unwrap();
+            let (fd, path) =
+                block_on(portal_main(settings.cursor_mode, settings.source_type)).unwrap();
             self.src.set_property("fd", fd.parse::<i32>().unwrap());
             self.src.set_property("path", path);
         }
