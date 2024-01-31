@@ -19,7 +19,7 @@ Based on https://gitlab.gnome.org/-/snippets/19
 TODOS:
 [x] using ashpd
 [x] properties
-[ ] documetation
+[x] documetation
 [ ] bug width cursor-mode=embedded and gtkwaylandsink
 ```
 GST_DEBUG=2 gst-launch-1.0 -v --gst-plugin-load=target/debug/libgstxdgscreencapsrc.so  -v xdgscreencapsrc cursor-mode=embedded ! videoconvert ! identity silent=false ! gtkwaylandsink

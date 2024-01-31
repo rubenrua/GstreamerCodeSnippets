@@ -5,13 +5,18 @@
 // <https://mozilla.org/MPL/2.0/>.
 //
 // SPDX-License-Identifier: MPL-2.0
-
 /**
  * element-xdgscreencapsrc:
+ * @short_description: Source element wrapping pipewiresrc using xdg-desktop-portal to start a screencast session.
  *
- * TODO
- * {{ utils/xdgscreencapsrc/README.md[2:30] }}
+ * Based on https://gitlab.gnome.org/-/snippets/19 using https://crates.io/crates/ashpd
  *
+ * ## Example pipeline
+ * ```bash
+ * gst-launch-1.0 -v xdgscreencapsrc ! videoconvert ! identity silent=false ! gtkwaylandsink
+ * ```
+ *
+ * Since: plugins-rs-0.12.0
  */
 use gst::glib;
 use gst::prelude::*;
